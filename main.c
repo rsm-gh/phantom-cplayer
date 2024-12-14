@@ -31,15 +31,29 @@ void vlc_quit(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player
     libvlc_release(vlc_instance);
 };
 
-static void gtk_on_window_realize(GtkWidget *window, gpointer user_data){
+static void gtk_on_drawing_area_realize(GtkWidget *window, gpointer user_data){
     GdkWindow* gdk_window = gtk_widget_get_window(window);
     const Window xid = gdk_x11_window_get_xid(gdk_window);
 
-    const struct VlcContainer *vlc_container = (struct VlcContainer*) user_data;
+    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
     libvlc_media_player_set_xwindow(vlc_container->player, xid);
 
     vlc_set_path(vlc_container->instance, vlc_container->player, "/home/rsm/Videos/vlc/test.mp4");
+};
+
+static void gtk_on_drawing_area_draw_enter(GtkWidget *widget, cairo_t *cairo_context, gpointer user_data){
+    cairo_set_source_rgb(cairo_context, 0, 0, 0);
+    cairo_paint(cairo_context);
+};
+
+static void gtk_on_button_play_clicked(GtkWidget *window, gpointer user_data){
+    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
     libvlc_media_player_play(vlc_container->player);
+};
+
+static void gtk_on_button_pause_clicked(GtkWidget *window, gpointer user_data){
+    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
+    libvlc_media_player_pause(vlc_container->player);
 };
 
 // static void gtk_on_window_destroy(GtkWidget *window, gpointer user_data){
@@ -47,14 +61,37 @@ static void gtk_on_window_realize(GtkWidget *window, gpointer user_data){
 //     vlc_quit(vlc_container->instance, vlc_container->player);
 // };
 
-static void gtk_app_activate(GtkApplication* app, gpointer user_data){
-    GtkWidget *window = gtk_application_window_new(app);
+static void gtk_app_activate(GtkApplication* application, gpointer user_data){
 
-    g_signal_connect(window, "realize", G_CALLBACK(gtk_on_window_realize), user_data);
-    //g_signal_connect(window, "destroy", G_CALLBACK(gtk_on_window_destroy), user_data);
-
+    GtkWidget *window = gtk_application_window_new(application);
     gtk_window_set_title(GTK_WINDOW(window), "VLC Player on GTK3");
     gtk_window_set_default_size(GTK_WINDOW(window), 200, 200);
+    //g_signal_connect(window, "destroy", G_CALLBACK(gtk_on_window_destroy), user_data);
+
+    GtkWidget *box_window = gtk_button_box_new(GTK_ORIENTATION_VERTICAL);
+    gtk_container_add(GTK_CONTAINER(window), box_window);
+
+    GtkWidget *drawing_area = gtk_drawing_area_new();
+    gtk_widget_set_size_request(drawing_area, 600, 400);
+    gtk_widget_set_hexpand(drawing_area, true);
+    gtk_widget_set_vexpand(drawing_area, true);
+    gtk_container_add(GTK_CONTAINER(box_window), drawing_area);
+    //gtk_box_pack_start(GTK_BOX(box_window), drawing_area, true, true, 0);
+    g_signal_connect(drawing_area, "realize", G_CALLBACK(gtk_on_drawing_area_realize), user_data);
+    g_signal_connect(drawing_area, "draw", G_CALLBACK(gtk_on_drawing_area_draw_enter), NULL);
+
+
+    GtkWidget *box_controls = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_container_add(GTK_CONTAINER(box_window), box_controls);
+
+    GtkWidget *button_play = gtk_button_new_with_label("Play");
+    gtk_container_add(GTK_CONTAINER(box_controls), button_play);
+    g_signal_connect(button_play, "clicked", G_CALLBACK(gtk_on_button_play_clicked), user_data);
+
+    GtkWidget *button_pause = gtk_button_new_with_label("Pause");
+    gtk_container_add(GTK_CONTAINER(box_controls), button_pause);
+    g_signal_connect(button_pause, "clicked", G_CALLBACK(gtk_on_button_pause_clicked), user_data);
+
     gtk_widget_show_all(window);
 };
 
