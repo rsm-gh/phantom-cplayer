@@ -19,8 +19,8 @@ add_definitions(${GTK3_CFLAGS_OTHER})
 # Find VLC
 #
 #find_package(libvlc REQUIRED)
-include_directories("/usr/include/")
-link_directories("/usr/lib/")
+#include_directories("/usr/include/")
+#link_directories("/usr/lib/")
 
 add_executable(cplayer main.c)
 
