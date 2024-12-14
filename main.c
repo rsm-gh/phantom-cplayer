@@ -18,18 +18,18 @@ void vlc_set_path(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_pl
     libvlc_media_release(media);
 };
 
-void vlc_quit(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player){
-    libvlc_media_player_stop(vlc_player);
-    libvlc_media_player_release(vlc_player);
-    libvlc_release(vlc_instance);
-};
-
-struct VlcContainer init_vlc(){
+struct VlcContainer vlc_init(){
     libvlc_instance_t *vlc_instance = libvlc_new(0, NULL);
     libvlc_media_player_t *vlc_player = libvlc_media_player_new(vlc_instance);
     const struct VlcContainer vlc_container = {vlc_instance, vlc_player, NULL};
     return vlc_container;
 }
+
+void vlc_quit(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player){
+    libvlc_media_player_stop(vlc_player);
+    libvlc_media_player_release(vlc_player);
+    libvlc_release(vlc_instance);
+};
 
 static void gtk_on_window_realize(GtkWidget *window, gpointer user_data){
     GdkWindow* gdk_window = gtk_widget_get_window(window);
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
 
     putenv("GDK_BACKEND=x11");
 
-    struct VlcContainer vlc_container = init_vlc();
+    struct VlcContainer vlc_container = vlc_init();
 
     GtkApplication *application = gtk_application_new("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(application, "activate", G_CALLBACK(gtk_app_activate), &vlc_container);
