@@ -86,10 +86,12 @@ static void gtk_on_drawing_area_realize(GtkWidget *window, gpointer user_data){
     GdkWindow* gdk_window = gtk_widget_get_window(window);
     const Window xid = gdk_x11_window_get_xid(gdk_window);
 
-    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
-    libvlc_media_player_set_xwindow(vlc_container->player, xid);
+    const struct MediaPlayerWidget *mp_widget = user_data;
 
-    vlc_set_path(vlc_container->instance, vlc_container->player, "/home/rsm/Videos/vlc/test.mp4");
+    //const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
+    libvlc_media_player_set_xwindow(mp_widget->vlc_container->player, xid);
+
+    vlc_set_path(mp_widget->vlc_container->instance, mp_widget->vlc_container->player, "/home/rsm/Videos/vlc/test.mp4");
 };
 
 static void gtk_on_drawing_area_draw_enter(GtkWidget *widget, cairo_t *cairo_context, gpointer user_data){
@@ -98,13 +100,13 @@ static void gtk_on_drawing_area_draw_enter(GtkWidget *widget, cairo_t *cairo_con
 };
 
 static void gtk_on_button_play_clicked(GtkWidget *window, gpointer user_data){
-    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
-    libvlc_media_player_play(vlc_container->player);
+    const struct MediaPlayerWidget *mp_widget = user_data;
+    libvlc_media_player_play(mp_widget->vlc_container->player);
 };
 
 static void gtk_on_button_pause_clicked(GtkWidget *window, gpointer user_data){
-    const struct VlcContainer *vlc_container =(struct VlcContainer*) user_data;
-    libvlc_media_player_pause(vlc_container->player);
+    const struct MediaPlayerWidget *mp_widget = user_data;
+    libvlc_media_player_pause(mp_widget->vlc_container->player);
 };
 
 // static void gtk_on_window_destroy(GtkWidget *window, gpointer user_data){
@@ -114,21 +116,19 @@ static void gtk_on_button_pause_clicked(GtkWidget *window, gpointer user_data){
 
 static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
 
-    struct MediaPlayerWidget mp_widget = gtk_init_mp_widget();
-
-    mp_widget.vlc_container = (struct VlcContainer*) user_data;
+    struct MediaPlayerWidget *mp_widget = user_data;
 
     GtkWidget *window_root = gtk_application_window_new(application);
     gtk_window_set_title(GTK_WINDOW(window_root), "Phantom CPlayer");
-    gtk_window_set_default_size(GTK_WINDOW(window_root), 200, 200);
+    gtk_window_set_default_size(GTK_WINDOW(window_root), 800, 500);
     //g_signal_connect(window, "destroy", G_CALLBACK(gtk_on_window_destroy), user_data);
-    mp_widget.window_root = window_root;
+    mp_widget->window_root = window_root;
 
     GtkWidget *box_window = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(box_window, true);
     gtk_widget_set_vexpand(box_window, true);
     gtk_container_add(GTK_CONTAINER(window_root), box_window);
-    mp_widget.box_window = box_window;
+    mp_widget->box_window = box_window;
 
     GtkWidget *drawing_area = gtk_drawing_area_new();
     gtk_widget_set_hexpand(drawing_area, true);
@@ -139,7 +139,7 @@ static void gtk_on_app_activate(GtkApplication* application, gpointer user_data)
 
     GtkWidget *box_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(box_window), box_buttons);
-    mp_widget.box_buttons = box_buttons;
+    mp_widget->box_buttons = box_buttons;
 
     GtkWidget *button_play = gtk_button_new_with_label("Play");
     gtk_container_add(GTK_CONTAINER(box_buttons), button_play);
@@ -154,7 +154,7 @@ static void gtk_on_app_activate(GtkApplication* application, gpointer user_data)
     gtk_widget_set_sensitive(scale_progress, false);
     gtk_scale_set_draw_value(GTK_SCALE(scale_progress), false);
     gtk_container_add(GTK_CONTAINER(box_buttons), scale_progress);
-    mp_widget.scale_progress = scale_progress;
+    mp_widget->scale_progress = scale_progress;
 
     gtk_widget_show_all(window_root);
 };
@@ -163,10 +163,12 @@ int main(const int argc, char* argv[]){
 
     putenv("GDK_BACKEND=x11");
 
+    struct MediaPlayerWidget mp_widget = gtk_init_mp_widget();
     struct VlcContainer vlc_container = vlc_init();
+    mp_widget.vlc_container = &vlc_container;
 
     GtkApplication *application = gtk_application_new("com.senties-martinelli.PhantomCPlayer", G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), &vlc_container);
+    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), &mp_widget);
 
     const int gtk_status = g_application_run(G_APPLICATION(application), argc, argv);
     g_object_unref(application);
