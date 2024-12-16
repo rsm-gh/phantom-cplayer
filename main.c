@@ -21,6 +21,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
+// This code is the C implementation of Phantom-Player: https://github.com/rsm-gh/phantom-player
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -33,6 +35,33 @@ struct VlcContainer{
     libvlc_media_player_t *player;
     libvlc_media_t *media;
 };
+
+struct MediaPlayerWidget{
+    GtkWidget *window_root;
+    GtkWidget *box_window;
+    GtkWidget *box_buttons;
+    GtkWidget *menubutton_restart;
+    GtkWidget *menubutton_play;
+    GtkWidget *menubutton_next;
+    GtkWidget *scale_progress;
+    struct VlcContainer *vlc_container;
+};
+
+static struct MediaPlayerWidget gtk_init_mp_widget(){
+    struct MediaPlayerWidget mp_widget;
+
+    mp_widget.window_root = NULL;
+    mp_widget.box_window = NULL;
+    mp_widget.box_buttons = NULL;
+    mp_widget.menubutton_restart = NULL;
+    mp_widget.menubutton_play = NULL;
+    mp_widget.menubutton_next = NULL;
+    mp_widget.scale_progress = NULL;
+    mp_widget.menubutton_next = NULL;
+    mp_widget.vlc_container = NULL;
+
+    return mp_widget;
+}
 
 static void vlc_set_path(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player, const char* path){
     libvlc_media_t *media = libvlc_media_new_path(vlc_instance, path);
@@ -83,54 +112,61 @@ static void gtk_on_button_pause_clicked(GtkWidget *window, gpointer user_data){
 //     vlc_quit(vlc_container->instance, vlc_container->player);
 // };
 
-static void gtk_app_activate(GtkApplication* application, gpointer user_data){
+static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
 
-    GtkWidget *window = gtk_application_window_new(application);
-    gtk_window_set_title(GTK_WINDOW(window), "Phantom CPlayer");
-    gtk_window_set_default_size(GTK_WINDOW(window), 200, 200);
+    struct MediaPlayerWidget mp_widget = gtk_init_mp_widget();
+
+    mp_widget.vlc_container = (struct VlcContainer*) user_data;
+
+    GtkWidget *window_root = gtk_application_window_new(application);
+    gtk_window_set_title(GTK_WINDOW(window_root), "Phantom CPlayer");
+    gtk_window_set_default_size(GTK_WINDOW(window_root), 200, 200);
     //g_signal_connect(window, "destroy", G_CALLBACK(gtk_on_window_destroy), user_data);
+    mp_widget.window_root = window_root;
 
-    GtkWidget *box_window = gtk_button_box_new(GTK_ORIENTATION_VERTICAL);
+    GtkWidget *box_window = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(box_window, true);
     gtk_widget_set_vexpand(box_window, true);
-    gtk_widget_set_halign(box_window, GTK_ALIGN_FILL);
-    gtk_widget_set_valign(box_window, GTK_ALIGN_FILL);
-    gtk_container_add(GTK_CONTAINER(window), box_window);
+    gtk_container_add(GTK_CONTAINER(window_root), box_window);
+    mp_widget.box_window = box_window;
 
     GtkWidget *drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 600, 400);
     gtk_widget_set_hexpand(drawing_area, true);
     gtk_widget_set_vexpand(drawing_area, true);
-    gtk_widget_set_halign(drawing_area, GTK_ALIGN_FILL);
-    gtk_widget_set_valign(drawing_area, GTK_ALIGN_FILL);
-
     gtk_container_add(GTK_CONTAINER(box_window), drawing_area);
-    //gtk_box_pack_start(GTK_BOX(box_window), drawing_area, true, true, 0);
     g_signal_connect(drawing_area, "realize", G_CALLBACK(gtk_on_drawing_area_realize), user_data);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(gtk_on_drawing_area_draw_enter), NULL);
 
-    GtkWidget *box_controls = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_container_add(GTK_CONTAINER(box_window), box_controls);
+    GtkWidget *box_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add(GTK_CONTAINER(box_window), box_buttons);
+    mp_widget.box_buttons = box_buttons;
 
     GtkWidget *button_play = gtk_button_new_with_label("Play");
-    gtk_container_add(GTK_CONTAINER(box_controls), button_play);
+    gtk_container_add(GTK_CONTAINER(box_buttons), button_play);
     g_signal_connect(button_play, "clicked", G_CALLBACK(gtk_on_button_play_clicked), user_data);
 
     GtkWidget *button_pause = gtk_button_new_with_label("Pause");
-    gtk_container_add(GTK_CONTAINER(box_controls), button_pause);
+    gtk_container_add(GTK_CONTAINER(box_buttons), button_pause);
     g_signal_connect(button_pause, "clicked", G_CALLBACK(gtk_on_button_pause_clicked), user_data);
 
-    gtk_widget_show_all(window);
+    GtkWidget *scale_progress = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 1, 1);
+    gtk_widget_set_hexpand(scale_progress, true);
+    gtk_widget_set_sensitive(scale_progress, false);
+    gtk_scale_set_draw_value(GTK_SCALE(scale_progress), false);
+    gtk_container_add(GTK_CONTAINER(box_buttons), scale_progress);
+    mp_widget.scale_progress = scale_progress;
+
+    gtk_widget_show_all(window_root);
 };
 
-int main(int argc, char* argv[]){
+int main(const int argc, char* argv[]){
 
     putenv("GDK_BACKEND=x11");
 
     struct VlcContainer vlc_container = vlc_init();
 
     GtkApplication *application = gtk_application_new("com.senties-martinelli.PhantomCPlayer", G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(application, "activate", G_CALLBACK(gtk_app_activate), &vlc_container);
+    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), &vlc_container);
 
     const int gtk_status = g_application_run(G_APPLICATION(application), argc, argv);
     g_object_unref(application);
