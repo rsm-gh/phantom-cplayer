@@ -44,8 +44,20 @@ typedef struct {
     GtkWidget *menubutton_play;
     GtkWidget *menubutton_next;
     GtkWidget *scale_progress;
+    GtkWidget *label_video_time;
     Vlc *vlc;
+
+    libvlc_time_t _vlc_emitted_time;
+
 } MediaPlayerWidget;
+
+int digits_nb(const libvlc_time_t number) {
+    //if (number < 0) return numPlaces ((n == INT_MIN) ? INT_MAX: -n);
+    if (number < 10){
+        return 1;
+    }
+    return 1 + (number / 10);
+}
 
 static MediaPlayerWidget gtk_init_mp_widget(){
     MediaPlayerWidget mp_widget;
@@ -58,15 +70,23 @@ static MediaPlayerWidget gtk_init_mp_widget(){
     mp_widget.menubutton_next = NULL;
     mp_widget.scale_progress = NULL;
     mp_widget.menubutton_next = NULL;
+    mp_widget.label_video_time = NULL;
     mp_widget.vlc = NULL;
 
+    mp_widget._vlc_emitted_time = -1;
+
     return mp_widget;
+}
+
+void int64_to_char(char char_val[], int64_t int_val) {
+    for(int i = 0; i < 8; i++)
+        char_val[i] = int_val >> (8-1-i)*8;
 }
 
 static void vlc_set_path(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player, const char* path){
     libvlc_media_t *media = libvlc_media_new_path(vlc_instance, path);
     libvlc_media_player_set_media(vlc_player, media);
-    libvlc_media_release(media);
+    // libvlc_media_release(media);
 };
 
 static Vlc vlc_init(){
@@ -80,6 +100,31 @@ static void vlc_quit(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc
     libvlc_media_player_stop(vlc_player);
     libvlc_media_player_release(vlc_player);
     libvlc_release(vlc_instance);
+};
+
+static void vlc_on_time_changed(const libvlc_event_t *event, void *data)
+{
+    libvlc_time_t player_time = event->u.media_player_time_changed.new_time;
+
+    // Convert to seconds
+    if(player_time > 0){
+        player_time = player_time / 1000;
+    }else{
+        player_time = 0;
+    };
+
+    // Update the emitted time
+    MediaPlayerWidget *mp_widget = data;
+    if (player_time == mp_widget->_vlc_emitted_time){
+        return;
+    };
+
+    mp_widget->_vlc_emitted_time = player_time;
+
+    // Update the time label
+    char char_time[digits_nb(player_time)];
+    sprintf(char_time, "%ld", player_time);
+    gtk_label_set_text(GTK_LABEL(mp_widget->label_video_time), char_time);
 };
 
 static void gtk_on_drawing_area_realize(GtkWidget *window, gpointer user_data){
@@ -113,9 +158,7 @@ static void gtk_on_button_pause_clicked(GtkWidget *window, gpointer user_data){
 //     vlc_quit(mp_widget->vlc->instance, vlc->player);
 // };
 
-static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
-
-    MediaPlayerWidget *mp_widget = user_data;
+static void gtk_init_mp(GtkApplication *application, MediaPlayerWidget *mp_widget){
 
     GtkWidget *window_root = gtk_application_window_new(application);
     gtk_window_set_title(GTK_WINDOW(window_root), "Phantom CPlayer");
@@ -133,7 +176,7 @@ static void gtk_on_app_activate(GtkApplication* application, gpointer user_data)
     gtk_widget_set_hexpand(drawing_area, true);
     gtk_widget_set_vexpand(drawing_area, true);
     gtk_container_add(GTK_CONTAINER(box_window), drawing_area);
-    g_signal_connect(drawing_area, "realize", G_CALLBACK(gtk_on_drawing_area_realize), user_data);
+    g_signal_connect(drawing_area, "realize", G_CALLBACK(gtk_on_drawing_area_realize), mp_widget);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(gtk_on_drawing_area_draw_enter), NULL);
 
     GtkWidget *box_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -142,11 +185,11 @@ static void gtk_on_app_activate(GtkApplication* application, gpointer user_data)
 
     GtkWidget *button_play = gtk_button_new_with_label("Play");
     gtk_container_add(GTK_CONTAINER(box_buttons), button_play);
-    g_signal_connect(button_play, "clicked", G_CALLBACK(gtk_on_button_play_clicked), user_data);
+    g_signal_connect(button_play, "clicked", G_CALLBACK(gtk_on_button_play_clicked), mp_widget);
 
     GtkWidget *button_pause = gtk_button_new_with_label("Pause");
     gtk_container_add(GTK_CONTAINER(box_buttons), button_pause);
-    g_signal_connect(button_pause, "clicked", G_CALLBACK(gtk_on_button_pause_clicked), user_data);
+    g_signal_connect(button_pause, "clicked", G_CALLBACK(gtk_on_button_pause_clicked), mp_widget);
 
     GtkWidget *scale_progress = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 1, 1);
     gtk_widget_set_hexpand(scale_progress, true);
@@ -155,7 +198,27 @@ static void gtk_on_app_activate(GtkApplication* application, gpointer user_data)
     gtk_container_add(GTK_CONTAINER(box_buttons), scale_progress);
     mp_widget->scale_progress = scale_progress;
 
+    GtkWidget *label_video_time = gtk_label_new("00:00");
+    gtk_container_add(GTK_CONTAINER(box_buttons), label_video_time);
+    mp_widget->label_video_time = label_video_time;
+
+    //
+    // VLC
+    //
+    libvlc_event_manager_t *event_manager = libvlc_media_player_event_manager(mp_widget->vlc->player);
+
+    const int status = libvlc_event_attach(event_manager, libvlc_MediaPlayerTimeChanged, vlc_on_time_changed, mp_widget);
+    if (status != 0){
+        printf("Error 001: libvlc_event_attach -> libvlc_MediaPlayerTimeChanged\n");
+        exit(status);
+    };
+
     gtk_widget_show_all(window_root);
+}
+
+static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
+    MediaPlayerWidget *mp_widget = user_data;
+    gtk_init_mp(application, mp_widget);
 };
 
 int main(const int argc, char* argv[]){
