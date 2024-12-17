@@ -51,13 +51,22 @@ typedef struct {
 
 } MediaPlayerWidget;
 
-int digits_nb(const libvlc_time_t number) {
-    //if (number < 0) return numPlaces ((n == INT_MIN) ? INT_MAX: -n);
-    if (number < 10){
-        return 1;
+int digits_nb(libvlc_time_t number) {
+
+    int digits = 1;
+
+    if (number < 0){
+        number = (number == INT64_MIN) ? INT64_MAX: -number;
+    };
+
+    while (number > 9) {
+        number /= 10;
+        digits++;
     }
-    return 1 + (number / 10);
-}
+
+    return digits;
+
+};
 
 static MediaPlayerWidget gtk_init_mp_widget(){
     MediaPlayerWidget mp_widget;
@@ -76,11 +85,6 @@ static MediaPlayerWidget gtk_init_mp_widget(){
     mp_widget._vlc_emitted_time = -1;
 
     return mp_widget;
-}
-
-void int64_to_char(char char_val[], int64_t int_val) {
-    for(int i = 0; i < 8; i++)
-        char_val[i] = int_val >> (8-1-i)*8;
 }
 
 static void vlc_set_path(libvlc_instance_t *vlc_instance, libvlc_media_player_t *vlc_player, const char* path){
@@ -122,9 +126,10 @@ static void vlc_on_time_changed(const libvlc_event_t *event, void *data)
     mp_widget->_vlc_emitted_time = player_time;
 
     // Update the time label
-    char char_time[digits_nb(player_time)];
-    sprintf(char_time, "%ld", player_time);
-    gtk_label_set_text(GTK_LABEL(mp_widget->label_video_time), char_time);
+    char time_text[digits_nb(player_time)];
+    sprintf(time_text, "%ld", player_time);
+    gtk_label_set_text(GTK_LABEL(mp_widget->label_video_time), time_text);
+
 };
 
 static void gtk_on_drawing_area_realize(GtkWidget *window, gpointer user_data){
