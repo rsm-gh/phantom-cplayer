@@ -52,8 +52,8 @@ include_directories(.)
 link_directories(.)
 
 add_executable(phantom-cplayer
-        src/view/VlcWidget.c
-        src/view/MediaPlayerWidget.c
+        src/view/GtkVlc.c
+        src/view/GtkPlayer.c
         src/utils.c
         src/main.c)
 

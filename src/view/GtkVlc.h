@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  Copyright (c) 2025 Rafael Senties Martinelli.
+//  Copyright (c) 2024 Rafael Senties Martinelli.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef _VLC_WIDGET_H
-#define _VLC_WIDGET_H
+#ifndef _GTK_VLC
+#define _GTK_VLC
 
 #include <vlc/vlc.h>
 #include <gtk/gtk.h>
@@ -32,10 +32,9 @@ typedef struct {
     libvlc_instance_t *instance;
     libvlc_media_player_t *player;
     libvlc_media_t *media;
-} VlcWidget;
+} GtkVlc;
 
-VlcWidget *vlc_widget_create();
-void vlc_widget_bind(VlcWidget *vlc_widget);
-void vlc_widget_release(VlcWidget *vlc_widget);
+GtkVlc *gtk_vlc_new();
+void gtk_vlc_release(GtkVlc *vlc_widget);
 
-#endif //_VLC_WIDGET_H
+#endif //_GTK_VLC
