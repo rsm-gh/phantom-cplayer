@@ -34,7 +34,7 @@ typedef struct {
     libvlc_media_t *media;
 } VlcWidget;
 
-VlcWidget vlc_widget_create();
+VlcWidget *vlc_widget_create();
 void vlc_widget_bind(VlcWidget *vlc_widget);
 void vlc_widget_release(VlcWidget *vlc_widget);
 

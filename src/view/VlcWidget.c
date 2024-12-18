@@ -63,15 +63,15 @@ static void on_drawing_area_draw(GtkWidget *widget, cairo_t *cairo_context, gpoi
     cairo_paint(cairo_context);
 };
 
-VlcWidget vlc_widget_create(){
+VlcWidget *vlc_widget_create(){
 
-    VlcWidget vlc_widget;
+    VlcWidget *vlc_widget = malloc(sizeof(VlcWidget));
 
-    vlc_widget.instance = libvlc_new(0, NULL);
-    vlc_widget.player = libvlc_media_player_new(vlc_widget.instance);
-    vlc_widget.media = NULL;
+    vlc_widget->instance = libvlc_new(0, NULL);
+    vlc_widget->player = libvlc_media_player_new(vlc_widget->instance);
+    vlc_widget->media = NULL;
 
-    vlc_widget.drawing_area = NULL;
+    vlc_widget->drawing_area = gtk_drawing_area_new();
 
     return vlc_widget;
 

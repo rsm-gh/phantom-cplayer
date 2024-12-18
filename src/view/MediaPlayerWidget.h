@@ -43,8 +43,8 @@ typedef struct {
 
 } MediaPlayerWidget;
 
-MediaPlayerWidget create_media_player(VlcWidget *vlc_widget);
+MediaPlayerWidget media_player_create_empty();
 
-void init_media_player(GtkApplication *application, MediaPlayerWidget *mp_widget);
+void media_player_init(GtkApplication *application, MediaPlayerWidget *mp_widget);
 
 #endif //_MEDIA_PLAYER_WIDGET_H
