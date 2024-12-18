@@ -44,7 +44,18 @@ add_definitions(${GTK3_CFLAGS_OTHER})
 #include_directories("/usr/include/")
 #link_directories("/usr/lib/")
 
-add_executable(phantom-cplayer main.c)
+#
+# Local
+#
+
+include_directories(.)
+link_directories(.)
+
+add_executable(phantom-cplayer
+        src/view/VlcWidget.c
+        src/view/MediaPlayerWidget.c
+        src/utils.c
+        src/main.c)
 
 target_link_libraries(phantom-cplayer
         ${GTK3_LIBRARIES}
