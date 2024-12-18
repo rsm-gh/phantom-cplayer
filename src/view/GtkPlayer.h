@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  Copyright (c) 2025 Rafael Senties Martinelli.
+//  Copyright (c) 2024 Rafael Senties Martinelli.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -21,12 +21,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef _MEDIA_PLAYER_WIDGET_H
-#define _MEDIA_PLAYER_WIDGET_H
+#ifndef _GTK_PLAYER
+#define _GTK_PLAYER
 
 #include <vlc/vlc.h>
 #include <gtk/gtk.h>
-#include "VlcWidget.h"
+#include "GtkVlc.h"
 
 typedef struct {
     GtkWidget *window_root;
@@ -37,14 +37,12 @@ typedef struct {
     GtkWidget *menubutton_next;
     GtkWidget *scale_progress;
     GtkWidget *label_video_time;
-    VlcWidget *vlc;
+    GtkVlc *vlc;
 
     libvlc_time_t _vlc_emitted_time;
 
-} MediaPlayerWidget;
+} GtkPlayer;
 
-MediaPlayerWidget media_player_create_empty();
+GtkPlayer *gtk_player_new(GtkApplication *application);
 
-void media_player_init(GtkApplication *application, MediaPlayerWidget *mp_widget);
-
-#endif //_MEDIA_PLAYER_WIDGET_H
+#endif //_GTK_PLAYER

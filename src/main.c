@@ -1,7 +1,7 @@
 //
 //  MIT License
 //
-//  Copyright (c) 2025 Rafael Senties Martinelli.
+//  Copyright (c) 2024 Rafael Senties Martinelli.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#include "view/MediaPlayerWidget.h"
+#include "view/GtkPlayer.h"
 
 static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
-    MediaPlayerWidget *mp_widget = user_data;
-    media_player_init(application, mp_widget);
+    const GtkPlayer *player_widget = gtk_player_new(application);
+    gtk_widget_show_all(player_widget->window_root);
 };
 
 int main(const int argc, char* argv[]){
@@ -34,9 +34,7 @@ int main(const int argc, char* argv[]){
 
     GtkApplication *application = gtk_application_new("com.senties-martinelli.PhantomCPlayer", G_APPLICATION_DEFAULT_FLAGS);
 
-    MediaPlayerWidget mp_widget = media_player_create_empty();
-
-    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), &mp_widget);
+    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), NULL);
 
     const int gtk_status = g_application_run(G_APPLICATION(application), argc, argv);
 
