@@ -23,18 +23,36 @@
 
 #include "view/GtkPlayer.h"
 
-static void gtk_on_app_activate(GtkApplication* application, gpointer user_data){
+static void on_activate(GtkApplication *application, gpointer user_data){
     const GtkPlayer *player_widget = gtk_player_new(application);
     gtk_widget_show_all(player_widget->window_root);
+    printf("FOO");
 };
 
-int main(const int argc, char* argv[]){
+static void on_open(GApplication *application, GFile **files, gint n_files, const gchar *hint){
+
+    const GtkPlayer *player_widget = gtk_player_new(GTK_APPLICATION(application));
+    gtk_widget_show_all(player_widget->window_root);
+
+    for (gint i = 0; i < n_files; i++) {
+        char *video_path = g_file_get_path(files[i]);
+
+        if (i == 0){
+            gtk_player_set_path(player_widget, video_path);
+        };
+        g_print("File opened: %s\n", video_path);
+        g_free(video_path);
+    };
+}
+
+int main(const int argc, char *argv[]){
 
     putenv("GDK_BACKEND=x11");
 
-    GtkApplication *application = gtk_application_new("com.senties-martinelli.PhantomCPlayer", G_APPLICATION_DEFAULT_FLAGS);
+    GtkApplication *application = gtk_application_new("com.senties-martinelli.PhantomCPlayer", G_APPLICATION_HANDLES_OPEN);
 
-    g_signal_connect(application, "activate", G_CALLBACK(gtk_on_app_activate), NULL);
+    g_signal_connect(application, "activate", G_CALLBACK(on_activate), NULL);
+    g_signal_connect(application, "open", G_CALLBACK(on_open), NULL);
 
     const int gtk_status = g_application_run(G_APPLICATION(application), argc, argv);
 
