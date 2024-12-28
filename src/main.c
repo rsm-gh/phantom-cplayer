@@ -26,7 +26,6 @@
 static void on_activate(GtkApplication *application, gpointer user_data){
     const GtkPlayer *player_widget = gtk_player_new(application);
     gtk_widget_show_all(player_widget->window_root);
-    printf("FOO");
 };
 
 static void on_open(GApplication *application, GFile **files, gint n_files, const gchar *hint){
@@ -39,8 +38,10 @@ static void on_open(GApplication *application, GFile **files, gint n_files, cons
 
         if (i == 0){
             gtk_player_set_path(player_widget, video_path);
+        }else{
+            g_print("File will not be open: %s\n", video_path);
         };
-        g_print("File opened: %s\n", video_path);
+
         g_free(video_path);
     };
 }
