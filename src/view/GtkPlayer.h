@@ -44,5 +44,6 @@ typedef struct {
 } GtkPlayer;
 
 GtkPlayer *gtk_player_new(GtkApplication *application);
+void gtk_player_set_path(const GtkPlayer *player_widget, const char* path);
 
 #endif //_GTK_PLAYER
