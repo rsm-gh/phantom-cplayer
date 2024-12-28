@@ -33,6 +33,7 @@
 
 #define EMPTY_VIDEO_LENGTH "00:00"
 #define TEXT_BTN_PLAY "Play"
+#define TEXT_PHANTOM_PLAYER "Phantom Player"
 
 static void on_player_time_changed(const libvlc_event_t *event, void *data){
 
@@ -76,12 +77,19 @@ static void on_window_destroy(GtkWidget *window, gpointer user_data){
     free(player_widget);
 };
 
+void gtk_player_set_path(const GtkPlayer *player_widget, const char* path){
+    libvlc_media_t *media = libvlc_media_new_path(player_widget->vlc->instance, path);
+    libvlc_media_player_set_media(player_widget->vlc->player, media);
+    player_widget->vlc->media = media;
+    // libvlc_media_release(media);
+};
+
 GtkPlayer *gtk_player_new(GtkApplication *application){
 
     GtkPlayer *player_widget = malloc(sizeof(GtkPlayer));
 
     player_widget->window_root = gtk_application_window_new(application);
-    gtk_window_set_title(GTK_WINDOW(player_widget->window_root), "Phantom CPlayer");
+    gtk_window_set_title(GTK_WINDOW(player_widget->window_root), TEXT_PHANTOM_PLAYER);
     gtk_window_set_default_size(GTK_WINDOW(player_widget->window_root), 800, 500);
     g_signal_connect(player_widget->window_root, "destroy", G_CALLBACK(on_window_destroy), player_widget);
 

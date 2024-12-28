@@ -20,12 +20,6 @@
 #include <gdk/gdkx.h>
 #include "GtkVlc.h"
 
-void gtk_vlc_set_path(const GtkVlc *gtk_vlc, const char* path){
-    libvlc_media_t *media = libvlc_media_new_path(gtk_vlc->instance, path);
-    libvlc_media_player_set_media(gtk_vlc->player, media);
-    // libvlc_media_release(media);
-};
-
 static void on_drawing_area_realize(GtkWidget *window, gpointer user_data){
 
     const GtkVlc *vlc_widget = user_data;
@@ -34,7 +28,6 @@ static void on_drawing_area_realize(GtkWidget *window, gpointer user_data){
     const Window xid = gdk_x11_window_get_xid(gdk_window);
     libvlc_media_player_set_xwindow(vlc_widget->player, xid);
 
-    gtk_vlc_set_path(vlc_widget, "/home/rsm/Videos/vlc/test.mp4");
 };
 
 
