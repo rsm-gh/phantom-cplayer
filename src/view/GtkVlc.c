@@ -45,6 +45,9 @@ GtkVlc *gtk_vlc_new(){
     vlc_widget->player = libvlc_media_player_new(vlc_widget->instance);
     vlc_widget->media = NULL;
 
+    vlc_widget->media_event_manager = NULL;
+    vlc_widget->player_event_manager = NULL;
+
     vlc_widget->drawing_area = gtk_drawing_area_new();
     g_signal_connect(vlc_widget->drawing_area, "realize", G_CALLBACK(on_drawing_area_realize), vlc_widget);
     g_signal_connect(vlc_widget->drawing_area, "draw", G_CALLBACK(on_drawing_area_draw), NULL);
