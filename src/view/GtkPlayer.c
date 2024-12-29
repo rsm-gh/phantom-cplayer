@@ -61,6 +61,23 @@ static void on_player_time_changed(const libvlc_event_t *event, void *data){
 
 };
 
+static void on_player_parse_changed(const libvlc_event_t *event, void *data){
+    //const GtkPlayer *player_widget = data;
+
+    printf("Media parsed changed event triggered.\n");
+
+    switch(event->u.media_parsed_changed.new_status){
+
+        case libvlc_media_parsed_status_done:
+            printf("    Done.\n");
+            break;
+
+        default:
+            printf("    Other status.\n");
+            break;
+    };
+};
+
 static void on_button_play_clicked(GtkWidget *window, gpointer user_data){
     const GtkPlayer *player_widget = user_data;
     libvlc_media_player_play(player_widget->vlc->player);
@@ -71,17 +88,53 @@ static void on_button_play_clicked(GtkWidget *window, gpointer user_data){
 //     libvlc_media_player_pause(player_widget->vlc->player);
 // };
 
-static void on_window_destroy(GtkWidget *window, gpointer user_data){
-    GtkPlayer *player_widget = user_data;
-    gtk_vlc_release(player_widget->vlc);
-    free(player_widget);
+static void gtk_plyer_free_media(GtkPlayer *player_widget){
+
+    if (player_widget->vlc->media != NULL){
+        libvlc_media_release(player_widget->vlc->media);
+        player_widget->vlc->media = NULL;
+    };
+
+    if (player_widget->vlc->media_event_manager != NULL){
+        libvlc_event_detach(player_widget->vlc->media_event_manager, libvlc_MediaParsedChanged, on_player_parse_changed, player_widget);
+        player_widget->vlc->media_event_manager = NULL;
+    };
+
 };
 
-void gtk_player_set_path(const GtkPlayer *player_widget, const char* path){
+void gtk_player_set_path(GtkPlayer *player_widget, const char* path){
+
+    gtk_plyer_free_media(player_widget);
+
     libvlc_media_t *media = libvlc_media_new_path(player_widget->vlc->instance, path);
+
+    if (!media) {
+        fprintf(stderr, "Failed to create media object.\n");
+        return;
+    };
+
+    player_widget->vlc->media_event_manager = libvlc_media_event_manager(media);
+
+    if (libvlc_event_attach(player_widget->vlc->media_event_manager, libvlc_MediaParsedChanged, on_player_parse_changed, player_widget) != 0){
+        printf("Error 002: libvlc_event_attach -> libvlc_MediaParsedChanged\n");
+        exit(1);
+    };
+
+
     libvlc_media_player_set_media(player_widget->vlc->player, media);
     player_widget->vlc->media = media;
     // libvlc_media_release(media);
+
+    libvlc_media_parse_with_options(media, libvlc_media_parse_local, -1);
+    printf("parsing launched\n");
+};
+
+static void on_window_destroy(GtkWidget *window, gpointer user_data){
+    GtkPlayer *player_widget = user_data;
+    libvlc_event_detach(player_widget->vlc->player_event_manager, libvlc_MediaParsedChanged, on_player_parse_changed, user_data);
+    gtk_plyer_free_media(player_widget);
+    gtk_vlc_release(player_widget->vlc);
+    free(player_widget);
 };
 
 GtkPlayer *gtk_player_new(GtkApplication *application){
@@ -131,12 +184,11 @@ GtkPlayer *gtk_player_new(GtkApplication *application){
     //
     // VLC
     //
-    libvlc_event_manager_t *event_manager = libvlc_media_player_event_manager(player_widget->vlc->player);
+    player_widget->vlc->player_event_manager = libvlc_media_player_event_manager(player_widget->vlc->player);
 
-    const int status = libvlc_event_attach(event_manager, libvlc_MediaPlayerTimeChanged, on_player_time_changed, player_widget);
-    if (status != 0){
+    if (libvlc_event_attach(player_widget->vlc->player_event_manager, libvlc_MediaPlayerTimeChanged, on_player_time_changed, player_widget) != 0){
         printf("Error 001: libvlc_event_attach -> libvlc_MediaPlayerTimeChanged\n");
-        exit(status);
+        exit(1);
     };
 
     return player_widget;
