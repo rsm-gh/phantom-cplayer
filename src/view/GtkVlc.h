@@ -26,6 +26,8 @@ typedef struct {
     libvlc_instance_t *instance;
     libvlc_media_player_t *player;
     libvlc_media_t *media;
+    libvlc_event_manager_t *media_event_manager;
+    libvlc_event_manager_t *player_event_manager;
 } GtkVlc;
 
 GtkVlc *gtk_vlc_new();
